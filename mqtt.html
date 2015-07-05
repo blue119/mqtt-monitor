@@ -1,0 +1,74 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="bootstrap-3.3.5.min.css">
+    <script type="text/javascript" src="./browserMqtt.js"></script>
+    <script type="text/javascript" src="./jquery-1.6.2.js"></script>
+    <title>With mqtt.js, Monitoring MQTT Topic via websocket</title>
+</head>
+
+<body>
+    <h1>MQTT Monitor</h1>
+
+    <table align="center" style="width:80%" border="1" id="myTable" class="table table-striped">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Time</th>
+            <th>Topic</th>
+            <th>Payload</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+    var msg_count = 0;
+
+    function inc_count() {
+        msg_count+=1;
+        $("#count").text(msg_count);
+    }
+
+    function get_count() {
+        return msg_count;
+    }
+    </script>
+
+    <script>
+    var config = [];
+    var boot_time = new Date();
+
+    // fetch configuration
+    $.getJSON('config.json').done( function(json) {
+
+        $.each(json, function(key, val) {
+            config[key] = val;
+            console.log(key + " : " + val);
+        });
+
+    var client = mqtt.connect("ws://" + config.server, {port: config.port}); // you add a ws:// url here
+
+    client.subscribe('$SYS/#');
+
+    // as receviced message
+    client.on("message", function(topic, payload) {
+
+        inc_count();
+
+        var c = get_count();
+        var d = new Date();
+        var cur_time = (d.getTime() - boot_time.getTime())/1000;
+
+        // show new msg first
+        $("#myTable tbody").prepend("<tr><td>"+c+"</td><td>"+cur_time.toFixed(3)+"</td><td>"+topic+"</td><td>"+payload+"</td></tr>");
+    });
+
+    });
+</script>
+
+</body>
+
+</html>
